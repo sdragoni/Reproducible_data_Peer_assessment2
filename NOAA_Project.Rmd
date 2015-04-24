@@ -10,7 +10,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r}
-library("dplyr")
+library(plyr)
 library(ggplot2)
 
 
@@ -23,7 +23,9 @@ download.file(url,"repdata_data_StormData.csv.bz2")
 
 NOAA_Data <- read.csv(bzfile("repdata_data_StormData.csv.bz2"), header = TRUE, strip.white=TRUE)
 
-#### NOAA_Data$EVTYPE <- revalue(NOAA_Data$EVTYPE, c)
+
+NOAA_Data$EVTYPE <- toupper(NOAA_Data$EVTYPE)
+NOAA_Data$EVTYPE <- revalue(NOAA_Data$EVTYPE, c("FLOODING" = "FLOOD", "FLOOD/FLASH" = "FLASH FLOOD", "COASTAL FLOODING" = "COASTAL FLOOD", "HURRICANE OPAL" = "HURRICANE/TYPHOON", "TSTM WIND" = "THUNDERSTORM WIND", "HURRICANE OPAL/HIGH WINDS" = "HURRICANE/TYPHOON", "FLASH FLOOD/FLOOD" = "FLASH FLOOD", "HURRICANE ERIN" = "HURRICANE/TYPHOON", "TYPHOON" = "HURRICANE/TYPHOON", "HURRICANE" = "HURRICANE/TYPHOON", "HEAVY RAIN/SEVERE WEATHER" = "HEAVY RAIN", "HURRICANE EMILY" = "HURRICANE/TYPHOON", "HURRICANE FELIX" = "HURRICANE/TYPHOON", "MAJOR FLOOD" = "FLOOD", "TORNADOES, TSTM WIND, HAIL" = "TORNADO", "STORM SURGE" = "STORM TIDE", "WINTER STORM HIGH WINDS" = "WINTER STORM", "STORM SURGE/TIDE" = "STORM TIDE", "WILD/FOREST FIRE" = "WILDFIRE", "SEVERE THUNDERSTORM" = "THUNDERSTORM WIND", "HIGH WINDS" = "HIGH WIND", "FREEZE" = "FROST/FREEZE", "FLOOD/FLASH FLOOD" = "FLASH FLOODING", "DAMAGING FREEZE" = "FROST/FREEZE", "River Flooding" = "FLOOD", "HIGH WINDS/COLD" = "HIGH WIND", "TSTM WIND/HAIL" = "THUNDERSTORM WIND", "WILDFIRES" = "WILDFIRE", "COLD AND WET CONDITIONS" = "EXTREME COLD/WIND CHILL", "FROST" = "FROST/FREEZE", "RECORD COLD" = "EXTREME COLD/WIND CHILL", "WATERSPOUT/TORNADO" = "WATERSPOUT", "TROPICAL STORM JERRY" = "TROPICAL STORM", "TROPICAL STORM ALBERTO" = "TROPICAL STORM", "TROPICAL STORM GORDON" = "TROPICAL STORM", "TROPICAL STORM DEAN" = "TROPICAL STORM"))
 
 
 expense_data <- NOAA_Data[NOAA_Data$PROPDMG > 0 | NOAA_Data$CROPDMG > 0,] #Just the data with dollar losses
@@ -77,9 +79,30 @@ expense_data <- cbind(expense_data, PDMG, CDMG)
 
 expense_data$total_loss <- expense_data$PDMG + expense_data$CDMG
 
+
+
+
+######################33
+expense_data$EVTYPE <- toupper(expense_data$EVTYPE)
+
+expense_data$EVTYPE <- revalue(expense_data$EVTYPE, c("FLOODING" = "FLOOD", "FLOOD/FLASH" = "FLASH FLOOD", "COASTAL FLOODING" = "COASTAL FLOOD", "HURRICANE OPAL" = "HURRICANE/TYPHOON", "TSTM WIND" = "THUNDERSTORM WIND", "HURRICANE OPAL/HIGH WINDS" = "HURRICANE/TYPHOON", "FLASH FLOOD/FLOOD" = "FLASH FLOOD", "HURRICANE ERIN" = "HURRICANE/TYPHOON", "TYPHOON" = "HURRICANE/TYPHOON", "HURRICANE" = "HURRICANE/TYPHOON", "HEAVY RAIN/SEVERE WEATHER" = "HEAVY RAIN", "HURRICANE EMILY" = "HURRICANE/TYPHOON", "HURRICANE FELIX" = "HURRICANE/TYPHOON", "MAJOR FLOOD" = "FLOOD", "TORNADOES, TSTM WIND, HAIL" = "TORNADO", "STORM SURGE" = "STORM TIDE", "WINTER STORM HIGH WINDS" = "WINTER STORM", "STORM SURGE/TIDE" = "STORM TIDE", "WILD/FOREST FIRE" = "WILDFIRE", "SEVERE THUNDERSTORM" = "THUNDERSTORM WIND", "HIGH WINDS" = "HIGH WIND", "FREEZE" = "FROST/FREEZE", "FLOOD/FLASH FLOOD" = "FLASH FLOODING", "DAMAGING FREEZE" = "FROST/FREEZE", "River Flooding" = "FLOOD", "HIGH WINDS/COLD" = "HIGH WIND", "TSTM WIND/HAIL" = "THUNDERSTORM WIND", "WILDFIRES" = "WILDFIRE", "COLD AND WET CONDITIONS" = "EXTREME COLD/WIND CHILL", "FROST" = "FROST/FREEZE", "RECORD COLD" = "EXTREME COLD/WIND CHILL", "WATERSPOUT/TORNADO" = "WATERSPOUT", "TROPICAL STORM JERRY" = "TROPICAL STORM", "TROPICAL STORM ALBERTO" = "TROPICAL STORM", "TROPICAL STORM GORDON" = "TROPICAL STORM", "TROPICAL STORM DEAN" = "TROPICAL STORM"))
+
+
+
 Event_losses <- aggregate(expense_data$total_loss, by = list(expense_data$EVTYPE), sum, na.rm = TRUE)
 names(Event_losses) = c("LossType", "LossAmt")
 
+Event_losses <- Event_losses[with(Event_losses, order(-LossAmt, LossType)),]
+
+
+Event_losses <- Event_losses[with(Event_losses, order(-LossAmt, LossType)),]
+
+
+head(Event_losses,50)
+
+###############################
+
+ggplot(head(Event_losses,10), aes(x = LossType, y = LossAmt)) + geom_bar(stat = "identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
 
 
 
