@@ -1,0 +1,96 @@
+---
+title: "NOAA Storm Analysis"
+author: "Stephen Dragoni"
+date: "Wednesday, April 22, 2015"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library("dplyr")
+library(ggplot2)
+
+
+setwd("C:/Users/Stephen/Desktop/Coursera/Reproducible_data_Peer_assessment2")
+
+url="http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+download.file(url,"repdata_data_StormData.csv.bz2")
+
+
+
+NOAA_Data <- read.csv(bzfile("repdata_data_StormData.csv.bz2"), header = TRUE, strip.white=TRUE)
+
+#### NOAA_Data$EVTYPE <- revalue(NOAA_Data$EVTYPE, c)
+
+
+expense_data <- NOAA_Data[NOAA_Data$PROPDMG > 0 | NOAA_Data$CROPDMG > 0,] #Just the data with dollar losses
+
+expense_data <- expense_data[expense_data$PROPDMGEXP == "B" | expense_data$PROPDMGEXP == "m" | expense_data$PROPDMGEXP == "M"| expense_data$PROPDMGEXP == "7"| expense_data$PROPDMGEXP == "8"| expense_data$PROPDMGEXP == "9"| expense_data$CROPDMGEXP == "B" | expense_data$CROPDMGEXP == "m" | expense_data$CROPDMGEXP == "M"| expense_data$CROPDMGEXP == "7"| expense_data$CROPDMGEXP == "8"| expense_data$CROPDMGEXP == "9" | expense_data$CROPDMGEXP == "K",] #Just the large (gt millions) data with dollar losses
+
+
+PDMG <-  c(1,1)
+CDMG <-  c(1,1)
+
+
+for (i in 1:nrow(expense_data)){
+      
+
+      if (expense_data$PROPDMGEXP[i] == "1") PDMG[i] <- 10 * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "2") PDMG[i] <- 100 * expense_data$PROPDMG[i] 
+      else if (expense_data$PROPDMGEXP[i] == "3") PDMG[i] <- 1000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "4") PDMG[i] <- 10000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "5") PDMG[i] <- 100000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "6") PDMG[i] <- 1000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "7") PDMG[i] <- 10000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "8") PDMG[i] <- 100000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "B") PDMG[i] <- 1000000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "h") PDMG[i] <- 100  * expense_data$PROPDMG[i] 
+      else if (expense_data$PROPDMGEXP[i] == "H") PDMG[i] <- 100  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "K") PDMG[i] <- 1000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "m") PDMG[i] <- 1000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "M") PDMG[i] <- 1000000  * expense_data$PROPDMG[i]
+      else PDMG[i] <- 1  * expense_data$PROPDMG[i]
+
+      if (expense_data$CROPDMGEXP[i] == "1") CDMG[i] <- 10 * expense_data$CROPDMG[i]  
+      else if (expense_data$CROPDMGEXP[i] == "2") CDMG[i] <- 100 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "3") CDMG[i] <- 1000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "4") CDMG[i] <- 10000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "5") CDMG[i] <- 100000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "6") CDMG[i] <- 1000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "7") CDMG[i] <- 10000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "8") CDMG[i] <- 100000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "B") CDMG[i] <- 1000000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "h") CDMG[i] <- 100 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "H") CDMG[i] <- 100 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "K") CDMG[i] <- 1000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "m") CDMG[i] <- 1000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "M") CDMG[i] <- 1000000 * expense_data$CROPDMG[i]
+      else CDMG[i] <- 1 * expense_data$CROPDMG[i]
+      
+      
+      }
+
+expense_data <- cbind(expense_data, PDMG, CDMG)
+
+expense_data$total_loss <- expense_data$PDMG + expense_data$CDMG
+
+Event_losses <- aggregate(expense_data$total_loss, by = list(expense_data$EVTYPE), sum, na.rm = TRUE)
+names(Event_losses) = c("LossType", "LossAmt")
+
+
+
+
+
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
