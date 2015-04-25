@@ -1,0 +1,239 @@
+# NOAA Storm Data Analysis To Determine The Economic & Health Impact
+Stephen Dragoni  
+Wednesday, April 22, 2015  
+## Symopsis
+In this report I am to show which types of storms have the most impact on the USA from economic and health standpoints. Our overall hypothesis is that economic impact does not correspond with the impact on human life. The data provided covers the years 1950 to 2011 however from 1950 to 1955 only Tornado data was collected and from 1955 to 1995 only Tornado, Thunderstorm Wind, Hail was collected.  Using data prior to 1996 would skew the data towards Tornado, Thunderstorm Wind, Hail. Ideally the values would all be inflated to the same date but this is beyond the reach of this course. As can be seen from the data below the largest health impacts are from Tornado and Excessive Heat while most property damage is caused by Flood and Hurricanes. 
+
+## Loading and Processing the Raw Data
+
+### Loading the data
+From the course website I downloaded the data file.  
+
+
+
+```r
+library(dplyr)
+```
+
+```
+## 
+## Attaching package: 'dplyr'
+## 
+## The following object is masked from 'package:stats':
+## 
+##     filter
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+```
+
+```r
+library(plyr)
+```
+
+```
+## -------------------------------------------------------------------------
+## You have loaded plyr after dplyr - this is likely to cause problems.
+## If you need functions from both plyr and dplyr, please load plyr first, then dplyr:
+## library(plyr); library(dplyr)
+## -------------------------------------------------------------------------
+## 
+## Attaching package: 'plyr'
+## 
+## The following objects are masked from 'package:dplyr':
+## 
+##     arrange, count, desc, failwith, id, mutate, rename, summarise,
+##     summarize
+```
+
+```r
+library(ggplot2)
+library(reshape2)
+
+setwd("C:/Users/Stephen/Desktop/Coursera/Reproducible_data_Peer_assessment2")
+
+url="http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+download.file(url,"repdata_data_StormData.csv.bz2")
+```
+
+
+
+
+NOAA_Data <- read.csv(bzfile("repdata_data_StormData.csv.bz2"), header = TRUE, strip.white=TRUE)
+
+### Processing the raw data
+
+Since I am looking for data after 1995, I removed any storms 1995 and prior
+
+
+
+
+```r
+NOAA_Data$BGN_DATE <- as.character(NOAA_Data$BGN_DATE)
+
+NOAA_Data$BGN_DATE <- gsub( " .*$", "", NOAA_Data$BGN_DATE )
+NOAA_Data$BGN_DATE <- as.POSIXlt(NOAA_Data$BGN_DATE, format="%m/%d/%Y")
+
+NOAA_Data <- NOAA_Data[NOAA_Data$BGN_DATE$year + 1900 >= 1996,]
+```
+
+There is a large number of variations on the way that the events are described.  These are tidied up below. 
+
+
+```r
+NOAA_Data$EVTYPE <- toupper(NOAA_Data$EVTYPE)
+NOAA_Data$EVTYPE <- revalue(NOAA_Data$EVTYPE, c("FLOODING" = "FLOOD", "FLOOD/FLASH" = "FLASH FLOOD", "COASTAL FLOODING" = "COASTAL FLOOD", "HURRICANE OPAL" = "HURRICANE/TYPHOON", "TSTM WIND" = "THUNDERSTORM WIND", "HURRICANE OPAL/HIGH WINDS" = "HURRICANE/TYPHOON", "FLASH FLOOD/FLOOD" = "FLASH FLOOD", "HURRICANE ERIN" = "HURRICANE/TYPHOON", "TYPHOON" = "HURRICANE/TYPHOON", "HURRICANE" = "HURRICANE/TYPHOON", "HEAVY RAIN/SEVERE WEATHER" = "HEAVY RAIN", "HURRICANE EMILY" = "HURRICANE/TYPHOON", "HURRICANE FELIX" = "HURRICANE/TYPHOON", "MAJOR FLOOD" = "FLOOD", "TORNADOES, TSTM WIND, HAIL" = "TORNADO", "STORM SURGE" = "STORM TIDE", "WINTER STORM HIGH WINDS" = "WINTER STORM", "STORM SURGE/TIDE" = "STORM TIDE", "WILD/FOREST FIRE" = "WILDFIRE", "SEVERE THUNDERSTORM" = "THUNDERSTORM WIND", "HIGH WINDS" = "HIGH WIND", "FREEZE" = "FROST/FREEZE", "FLOOD/FLASH FLOOD" = "FLASH FLOODING", "DAMAGING FREEZE" = "FROST/FREEZE", "River Flooding" = "FLOOD", "HIGH WINDS/COLD" = "HIGH WIND", "TSTM WIND/HAIL" = "THUNDERSTORM WIND", "WILDFIRES" = "WILDFIRE", "COLD AND WET CONDITIONS" = "EXTREME COLD/WIND CHILL", "FROST" = "FROST/FREEZE", "RECORD COLD" = "EXTREME COLD/WIND CHILL", "WATERSPOUT/TORNADO" = "WATERSPOUT", "TROPICAL STORM JERRY" = "TROPICAL STORM", "TROPICAL STORM ALBERTO" = "TROPICAL STORM", "TROPICAL STORM GORDON" = "TROPICAL STORM", "TROPICAL STORM DEAN" = "TROPICAL STORM", "COASTAL  FLOODING/EROSION" = "COASTAL FLOOD", "EROSION/CSTL FLOOD" = "COASTAL FLOOD", "SEVERE THUNDERSTORMS" = "THUNDERSTORM WIND", "SEVERE THUNDERSTORM WINDS" = "THUNDERSTORM WIND", "EARLY FROST" = "FROST/FREEZE", "SMALL HAIL" = "HAIL", "RIVER FLOODING" = "FLOOD", "RIVER FLOOD" = "FLOOD", "THUNDERSTORM WINDS" = "THUNDERSTORM WIND", "EXTREME COLD" = "EXTREME COLD/WIND CHILL", "WILD FIRES" = "WILDFIRE", "FLASH FLOODING" = "FLASH FLOOD", "HAILSTORM" = "HAIL", "FLOOD/RAIN/WINDS" = "FLOOD", "URBAN/SML STREAM FLD" = "FLOOD", "AGRICULTURAL FREEZE" = "FROST/FREEZE", "HARD FREEZE" = "FROST/FREEZE", "COASTAL FLOODING/EROSION" = "COASTAL FLOOD", "HEAVY RAIN/HIGH SURF" = "HEAVY RAIN", "HEAT WAVE" = "EXCESSIVE HEAT", "FLOOD & HEAVY RAIN" = "HEAVY RAIN", "UNSEASONAL RAIN" = "HEAVY RAIN", "SNOW" = "HEAVY SNOW", "UNSEASONABLY COLD" = "FROST/FREEZE"))
+```
+
+```
+## The following `from` values were not present in `x`: FLOODING, FLOOD/FLASH, COASTAL FLOODING, HURRICANE OPAL, TSTM WIND, HURRICANE OPAL/HIGH WINDS, FLASH FLOOD/FLOOD, HURRICANE ERIN, TYPHOON, HURRICANE, HEAVY RAIN/SEVERE WEATHER, HURRICANE EMILY, HURRICANE FELIX, MAJOR FLOOD, TORNADOES, TSTM WIND, HAIL, STORM SURGE, WINTER STORM HIGH WINDS, STORM SURGE/TIDE, WILD/FOREST FIRE, SEVERE THUNDERSTORM, HIGH WINDS, FREEZE, FLOOD/FLASH FLOOD, DAMAGING FREEZE, River Flooding, HIGH WINDS/COLD, TSTM WIND/HAIL, WILDFIRES, COLD AND WET CONDITIONS, FROST, RECORD COLD, WATERSPOUT/TORNADO, TROPICAL STORM JERRY, TROPICAL STORM ALBERTO, TROPICAL STORM GORDON, TROPICAL STORM DEAN, SEVERE THUNDERSTORM WINDS, THUNDERSTORM WINDS, WILD FIRES, HAILSTORM, FLOOD/RAIN/WINDS, FLOOD & HEAVY RAIN
+```
+
+```r
+                              #                  ))
+```
+
+
+## Results
+
+The results are split into two sections economic and health.
+
+### Economic Impact
+
+Only the significant digits are entered into the database and the number of zeros are stored in a different column. I have set up a new dataframe to hold the values grossed up with the number of zeros.
+
+
+
+```r
+expense_data <- NOAA_Data[NOAA_Data$PROPDMG > 0 | NOAA_Data$CROPDMG > 0,] #Just the data with dollar losses
+
+expense_data <- expense_data[expense_data$PROPDMGEXP == "B" | expense_data$PROPDMGEXP == "m" | expense_data$PROPDMGEXP == "M"| expense_data$PROPDMGEXP == "7"| expense_data$PROPDMGEXP == "8"| expense_data$PROPDMGEXP == "9"| expense_data$CROPDMGEXP == "B" | expense_data$CROPDMGEXP == "m" | expense_data$CROPDMGEXP == "M"| expense_data$CROPDMGEXP == "7"| expense_data$CROPDMGEXP == "8"| expense_data$CROPDMGEXP == "9" | expense_data$CROPDMGEXP == "K",] #Just the large (gt millions) data with dollar losses
+
+
+PDMG <-  c(1,1)
+CDMG <-  c(1,1)
+
+
+for (i in 1:nrow(expense_data)){
+
+      if (expense_data$PROPDMGEXP[i] == "1") PDMG[i] <- 10 * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "2") PDMG[i] <- 100 * expense_data$PROPDMG[i] 
+      else if (expense_data$PROPDMGEXP[i] == "3") PDMG[i] <- 1000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "4") PDMG[i] <- 10000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "5") PDMG[i] <- 100000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "6") PDMG[i] <- 1000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "7") PDMG[i] <- 10000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "8") PDMG[i] <- 100000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "B") PDMG[i] <- 1000000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "h") PDMG[i] <- 100  * expense_data$PROPDMG[i] 
+      else if (expense_data$PROPDMGEXP[i] == "H") PDMG[i] <- 100  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "K") PDMG[i] <- 1000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "m") PDMG[i] <- 1000000  * expense_data$PROPDMG[i]
+      else if (expense_data$PROPDMGEXP[i] == "M") PDMG[i] <- 1000000  * expense_data$PROPDMG[i]
+      else PDMG[i] <- 1  * expense_data$PROPDMG[i]
+
+      if (expense_data$CROPDMGEXP[i] == "1") CDMG[i] <- 10 * expense_data$CROPDMG[i]  
+      else if (expense_data$CROPDMGEXP[i] == "2") CDMG[i] <- 100 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "3") CDMG[i] <- 1000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "4") CDMG[i] <- 10000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "5") CDMG[i] <- 100000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "6") CDMG[i] <- 1000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "7") CDMG[i] <- 10000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "8") CDMG[i] <- 100000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "B") CDMG[i] <- 1000000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "h") CDMG[i] <- 100 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "H") CDMG[i] <- 100 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "K") CDMG[i] <- 1000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "m") CDMG[i] <- 1000000 * expense_data$CROPDMG[i]
+      else if (expense_data$CROPDMGEXP[i] == "M") CDMG[i] <- 1000000 * expense_data$CROPDMG[i]
+      else CDMG[i] <- 1 * expense_data$CROPDMG[i]
+      
+}
+
+expense_data <- cbind(expense_data, PDMG, CDMG)
+
+expense_data$total_loss <- expense_data$PDMG + expense_data$CDMG
+```
+
+The grossed up values are then aggregagted by event type 
+
+
+```r
+Event_losses <- aggregate(expense_data$total_loss, by = list(expense_data$EVTYPE), sum, na.rm = TRUE)
+names(Event_losses) = c("LossType", "LossAmt")
+
+Event_losses <- Event_losses[with(Event_losses, order(-LossAmt, LossType)),]
+```
+The largest loss generators are shown in the table below 
+
+
+```r
+head(Event_losses,15)
+```
+
+```
+##                   LossType      LossAmt
+## 19                   FLOOD 148816412600
+## 33       HURRICANE/TYPHOON  87063470800
+## 50              STORM TIDE  47816733000
+## 54                 TORNADO  24314799850
+## 26                    HAIL  16837078540
+## 18             FLASH FLOOD  15947939530
+## 11                 DROUGHT  14413432000
+## 56          TROPICAL STORM   8303307350
+## 61                WILDFIRE   8100928600
+## 53       THUNDERSTORM WIND   7745467700
+## 32               HIGH WIND   5706003640
+## 34               ICE STORM   3626122300
+## 64            WINTER STORM   1476428200
+## 22            FROST/FREEZE   1412483500
+## 16 EXTREME COLD/WIND CHILL   1331556000
+```
+
+and in the following bar chart
+
+```r
+ggplot(head(Event_losses,15), aes(x = LossType, y = LossAmt)) + geom_bar(stat = "identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+![](NOAA_Project_files/figure-html/unnamed-chunk-7-1.png) 
+
+
+### Health Impact
+
+Similar to the Economic impact the health impact is extracted into a separate data frame.
+
+
+```r
+Event_Injuries <- aggregate(NOAA_Data$INJURIES , by = list(NOAA_Data$EVTYPE), sum, na.rm = TRUE)
+Event_Fatalities <- aggregate(NOAA_Data$FATALITIES , by = list(NOAA_Data$EVTYPE), sum, na.rm = TRUE)
+names(Event_Injuries) <- c("EventType", "Injuries")
+names(Event_Fatalities) <- c("EventType", "Fatalities")
+Event_Health <- cbind(Event_Fatalities, Event_Injuries$Injuries)
+names(Event_Health) <- c("EventType", "Fatalities", "Injuries")
+Event_Health$Tot_Inj.Fatal <- Event_Health$Injuries + Event_Health$Fatalities
+
+Event_Health <- Event_Health[Event_Health$Tot_Inj.Fatal >0, ]
+Event_Health <- Event_Health[with(Event_Health, order(-Tot_Inj.Fatal, -Fatalities, -Injuries, EventType )),]
+```
+
+
+
+```r
+EventHlth <- head(Event_Health,15) 
+```
+
+
+
+```r
+EventHlth <- EventHlth[c("EventType", "Fatalities", "Injuries")]
+
+health.long<-melt(EventHlth,id.vars="EventType")
+
+
+ggplot(health.long, aes(EventType,value, fill = as.factor(variable) )) + geom_bar(stat = "identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+![](NOAA_Project_files/figure-html/unnamed-chunk-10-1.png) 
+

@@ -6,7 +6,7 @@ output:
   html_document:
     keep_md: yes
 ---
-## Symopsis
+## Synopsis
 In this report I am to show which types of storms have the most impact on the USA from economic and health standpoints. Our overall hypothesis is that economic impact does not correspond with the impact on human life. The data provided covers the years 1950 to 2011 however from 1950 to 1955 only Tornado data was collected and from 1955 to 1995 only Tornado, Thunderstorm Wind, Hail was collected.  Using data prior to 1996 would skew the data towards Tornado, Thunderstorm Wind, Hail. Ideally the values would all be inflated to the same date but this is beyond the reach of this course. As can be seen from the data below the largest health impacts are from Tornado and Excessive Heat while most property damage is caused by Flood and Hurricanes. 
 
 ## Loading and Processing the Raw Data
@@ -15,51 +15,48 @@ In this report I am to show which types of storms have the most impact on the US
 From the course website I downloaded the data file.  
 
 
-```{r}
-library(dplyr)
+```{r, message=FALSE}
+# Load teh libraries
 library(plyr)
+library(dplyr)
 library(ggplot2)
 library(reshape2)
 
 setwd("C:/Users/Stephen/Desktop/Coursera/Reproducible_data_Peer_assessment2")
 
+# file location and download the file 
 url="http://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 download.file(url,"repdata_data_StormData.csv.bz2")
 
+
+NOAA_Data <- read.csv(bzfile("repdata_data_StormData.csv.bz2"), header = TRUE, strip.white=TRUE) #import the file
+
 ```
-
-
-
-
-NOAA_Data <- read.csv(bzfile("repdata_data_StormData.csv.bz2"), header = TRUE, strip.white=TRUE)
-
 ### Processing the raw data
 
 Since I am looking for data after 1995, I removed any storms 1995 and prior
 
 
 
-```{r}
+```{r,message=FALSE}
 
-NOAA_Data$BGN_DATE <- as.character(NOAA_Data$BGN_DATE)
+NOAA_Data$BGN_DATE <- as.character(NOAA_Data$BGN_DATE) # convert the factor to a char
 
-NOAA_Data$BGN_DATE <- gsub( " .*$", "", NOAA_Data$BGN_DATE )
-NOAA_Data$BGN_DATE <- as.POSIXlt(NOAA_Data$BGN_DATE, format="%m/%d/%Y")
+NOAA_Data$BGN_DATE <- gsub( " .*$", "", NOAA_Data$BGN_DATE ) # remove the time (all 0:00:00)
+NOAA_Data$BGN_DATE <- as.POSIXlt(NOAA_Data$BGN_DATE, format="%m/%d/%Y") # Change date to POSIXlt
 
-NOAA_Data <- NOAA_Data[NOAA_Data$BGN_DATE$year + 1900 >= 1996,]
+NOAA_Data <- NOAA_Data[NOAA_Data$BGN_DATE$year + 1900 >= 1996,] # keep only the 1996 and later
 
 ```
 
 There is a large number of variations on the way that the events are described.  These are tidied up below. 
 
-```{r}
+```{r,message=FALSE}
 
-NOAA_Data$EVTYPE <- toupper(NOAA_Data$EVTYPE)
-NOAA_Data$EVTYPE <- revalue(NOAA_Data$EVTYPE, c("FLOODING" = "FLOOD", "FLOOD/FLASH" = "FLASH FLOOD", "COASTAL FLOODING" = "COASTAL FLOOD", "HURRICANE OPAL" = "HURRICANE/TYPHOON", "TSTM WIND" = "THUNDERSTORM WIND", "HURRICANE OPAL/HIGH WINDS" = "HURRICANE/TYPHOON", "FLASH FLOOD/FLOOD" = "FLASH FLOOD", "HURRICANE ERIN" = "HURRICANE/TYPHOON", "TYPHOON" = "HURRICANE/TYPHOON", "HURRICANE" = "HURRICANE/TYPHOON", "HEAVY RAIN/SEVERE WEATHER" = "HEAVY RAIN", "HURRICANE EMILY" = "HURRICANE/TYPHOON", "HURRICANE FELIX" = "HURRICANE/TYPHOON", "MAJOR FLOOD" = "FLOOD", "TORNADOES, TSTM WIND, HAIL" = "TORNADO", "STORM SURGE" = "STORM TIDE", "WINTER STORM HIGH WINDS" = "WINTER STORM", "STORM SURGE/TIDE" = "STORM TIDE", "WILD/FOREST FIRE" = "WILDFIRE", "SEVERE THUNDERSTORM" = "THUNDERSTORM WIND", "HIGH WINDS" = "HIGH WIND", "FREEZE" = "FROST/FREEZE", "FLOOD/FLASH FLOOD" = "FLASH FLOODING", "DAMAGING FREEZE" = "FROST/FREEZE", "River Flooding" = "FLOOD", "HIGH WINDS/COLD" = "HIGH WIND", "TSTM WIND/HAIL" = "THUNDERSTORM WIND", "WILDFIRES" = "WILDFIRE", "COLD AND WET CONDITIONS" = "EXTREME COLD/WIND CHILL", "FROST" = "FROST/FREEZE", "RECORD COLD" = "EXTREME COLD/WIND CHILL", "WATERSPOUT/TORNADO" = "WATERSPOUT", "TROPICAL STORM JERRY" = "TROPICAL STORM", "TROPICAL STORM ALBERTO" = "TROPICAL STORM", "TROPICAL STORM GORDON" = "TROPICAL STORM", "TROPICAL STORM DEAN" = "TROPICAL STORM", "COASTAL  FLOODING/EROSION" = "COASTAL FLOOD", "EROSION/CSTL FLOOD" = "COASTAL FLOOD", "SEVERE THUNDERSTORMS" = "THUNDERSTORM WIND", "SEVERE THUNDERSTORM WINDS" = "THUNDERSTORM WIND", "EARLY FROST" = "FROST/FREEZE", "SMALL HAIL" = "HAIL", "RIVER FLOODING" = "FLOOD", "RIVER FLOOD" = "FLOOD", "THUNDERSTORM WINDS" = "THUNDERSTORM WIND", "EXTREME COLD" = "EXTREME COLD/WIND CHILL", "WILD FIRES" = "WILDFIRE", "FLASH FLOODING" = "FLASH FLOOD", "HAILSTORM" = "HAIL", "FLOOD/RAIN/WINDS" = "FLOOD", "URBAN/SML STREAM FLD" = "FLOOD", "AGRICULTURAL FREEZE" = "FROST/FREEZE", "HARD FREEZE" = "FROST/FREEZE", "COASTAL FLOODING/EROSION" = "COASTAL FLOOD", "HEAVY RAIN/HIGH SURF" = "HEAVY RAIN", "HEAT WAVE" = "EXCESSIVE HEAT", "FLOOD & HEAVY RAIN" = "HEAVY RAIN", "UNSEASONAL RAIN" = "HEAVY RAIN", "SNOW" = "HEAVY SNOW", "UNSEASONABLY COLD" = "FROST/FREEZE"))
+NOAA_Data$EVTYPE <- toupper(NOAA_Data$EVTYPE) # change the descriptions to upper case
+NOAA_Data$EVTYPE <- revalue(NOAA_Data$EVTYPE, c("FLOODING" = "FLOOD", "FLOOD/FLASH" = "FLASH FLOOD", "COASTAL FLOODING" = "COASTAL FLOOD", "HURRICANE OPAL" = "HURRICANE/TYPHOON", "TSTM WIND" = "THUNDERSTORM WIND", "HURRICANE OPAL/HIGH WINDS" = "HURRICANE/TYPHOON", "FLASH FLOOD/FLOOD" = "FLASH FLOOD", "HURRICANE ERIN" = "HURRICANE/TYPHOON", "TYPHOON" = "HURRICANE/TYPHOON", "HURRICANE" = "HURRICANE/TYPHOON", "HEAVY RAIN/SEVERE WEATHER" = "HEAVY RAIN", "HURRICANE EMILY" = "HURRICANE/TYPHOON", "HURRICANE FELIX" = "HURRICANE/TYPHOON", "MAJOR FLOOD" = "FLOOD", "TORNADOES, TSTM WIND, HAIL" = "TORNADO", "STORM SURGE" = "STORM TIDE", "WINTER STORM HIGH WINDS" = "WINTER STORM", "STORM SURGE/TIDE" = "STORM TIDE", "WILD/FOREST FIRE" = "WILDFIRE", "SEVERE THUNDERSTORM" = "THUNDERSTORM WIND", "HIGH WINDS" = "HIGH WIND", "FREEZE" = "FROST/FREEZE", "FLOOD/FLASH FLOOD" = "FLASH FLOODING", "DAMAGING FREEZE" = "FROST/FREEZE", "River Flooding" = "FLOOD", "HIGH WINDS/COLD" = "HIGH WIND", "TSTM WIND/HAIL" = "THUNDERSTORM WIND", "WILDFIRES" = "WILDFIRE", "COLD AND WET CONDITIONS" = "EXTREME COLD/WIND CHILL", "FROST" = "FROST/FREEZE", "RECORD COLD" = "EXTREME COLD/WIND CHILL", "WATERSPOUT/TORNADO" = "WATERSPOUT", "TROPICAL STORM JERRY" = "TROPICAL STORM", "TROPICAL STORM ALBERTO" = "TROPICAL STORM", "TROPICAL STORM GORDON" = "TROPICAL STORM", "TROPICAL STORM DEAN" = "TROPICAL STORM", "COASTAL  FLOODING/EROSION" = "COASTAL FLOOD", "EROSION/CSTL FLOOD" = "COASTAL FLOOD", "SEVERE THUNDERSTORMS" = "THUNDERSTORM WIND", "SEVERE THUNDERSTORM WINDS" = "THUNDERSTORM WIND", "EARLY FROST" = "FROST/FREEZE", "SMALL HAIL" = "HAIL", "RIVER FLOODING" = "FLOOD", "RIVER FLOOD" = "FLOOD", "THUNDERSTORM WINDS" = "THUNDERSTORM WIND", "EXTREME COLD" = "EXTREME COLD/WIND CHILL", "WILD FIRES" = "WILDFIRE", "FLASH FLOODING" = "FLASH FLOOD", "HAILSTORM" = "HAIL", "FLOOD/RAIN/WINDS" = "FLOOD", "URBAN/SML STREAM FLD" = "FLOOD", "AGRICULTURAL FREEZE" = "FROST/FREEZE", "HARD FREEZE" = "FROST/FREEZE", "COASTAL FLOODING/EROSION" = "COASTAL FLOOD", "HEAVY RAIN/HIGH SURF" = "HEAVY RAIN", "HEAT WAVE" = "EXCESSIVE HEAT", "FLOOD & HEAVY RAIN" = "HEAVY RAIN", "UNSEASONAL RAIN" = "HEAVY RAIN", "SNOW" = "HEAVY SNOW", "UNSEASONABLY COLD" = "FROST/FREEZE", "GUSTY WIND" = "HIGH WIND", "GUSTY WIND" = "HIGH WIND", "DRY MICROBURST" = "HEAVY RAIN", "EXTREME WINDCHILL" = "EXTREME COLD/WIND CHILL", "FOG" = "DENSE FOG", "ICY ROADS" = "FROST/FREEZE", "MARINE TSTM WIND" = "MARINE THUNDERSTORM WIND", "UNSEASONABLY WARM" = "HEAT", "WINTER WEATHER/MIX" = "WINTER WEATHER", "MUDSLIDE" = "LANDSLIDE")) # replace replace replace!!!
                                                 
-                              #                  ))
 ```
-
 
 ## Results
 
@@ -67,10 +64,9 @@ The results are split into two sections economic and health.
 
 ### Economic Impact
 
-Only the significant digits are entered into the database and the number of zeros are stored in a different column. I have set up a new dataframe to hold the values grossed up with the number of zeros.
+Only the significant digits are entered into the database and the number of zeros are stored in a different column. I have set up a new dataframe to hold the values grossed up with the number of zeros. Instead of the number of 0s some records have a letter signifying that they are hundreds, thousands, milliions etc. The code below also grosses these up. 
 
-
-```{r}
+```{r,message=FALSE}
 
 expense_data <- NOAA_Data[NOAA_Data$PROPDMG > 0 | NOAA_Data$CROPDMG > 0,] #Just the data with dollar losses
 
@@ -126,28 +122,28 @@ expense_data$total_loss <- expense_data$PDMG + expense_data$CDMG
 
 The grossed up values are then aggregagted by event type 
 
-```{r}
+```{r,message=FALSE}
 
 
 
 Event_losses <- aggregate(expense_data$total_loss, by = list(expense_data$EVTYPE), sum, na.rm = TRUE)
-names(Event_losses) = c("LossType", "LossAmt")
+names(Event_losses) = c("EventType", "LossAmt")
 
-Event_losses <- Event_losses[with(Event_losses, order(-LossAmt, LossType)),]
+Event_losses <- Event_losses[with(Event_losses, order(-LossAmt, EventType)),]
 
 ```
 The largest loss generators are shown in the table below 
 
 ```{r}
 
-head(Event_losses,15)
+head(format(Event_losses, big.mark = ","),15)
 
 ```
 
 and in the following bar chart
 ```{r}
 
-ggplot(head(Event_losses,15), aes(x = LossType, y = LossAmt)) + geom_bar(stat = "identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+ggplot(head(Event_losses,15), aes(x = EventType, y = LossAmt)) + geom_bar(stat = "identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
 
 
 
@@ -156,41 +152,55 @@ ggplot(head(Event_losses,15), aes(x = LossType, y = LossAmt)) + geom_bar(stat = 
 
 ### Health Impact
 
-Similar to the Economic impact the health impact is extracted into a separate data frame.
+Similar to the Economic impact the health impact is extracted into a separate data frame containing the number of injuries, fatalities and total by event type
 
-```{r}
-Event_Injuries <- aggregate(NOAA_Data$INJURIES , by = list(NOAA_Data$EVTYPE), sum, na.rm = TRUE)
-Event_Fatalities <- aggregate(NOAA_Data$FATALITIES , by = list(NOAA_Data$EVTYPE), sum, na.rm = TRUE)
-names(Event_Injuries) <- c("EventType", "Injuries")
-names(Event_Fatalities) <- c("EventType", "Fatalities")
-Event_Health <- cbind(Event_Fatalities, Event_Injuries$Injuries)
-names(Event_Health) <- c("EventType", "Fatalities", "Injuries")
-Event_Health$Tot_Inj.Fatal <- Event_Health$Injuries + Event_Health$Fatalities
+```{r,message=FALSE}
+Event_Injuries <- aggregate(NOAA_Data$INJURIES , by = list(NOAA_Data$EVTYPE), sum, na.rm = TRUE) # Aggregate the injuries by event type
+Event_Fatalities <- aggregate(NOAA_Data$FATALITIES , by = list(NOAA_Data$EVTYPE), sum, na.rm = TRUE) # Aggregate the fatalities by event type
+names(Event_Injuries) <- c("EventType", "Injuries") # headings
+names(Event_Fatalities) <- c("EventType", "Fatalities") # headings
+Event_Health <- cbind(Event_Fatalities, Event_Injuries$Injuries) #combine the dfs
+names(Event_Health) <- c("EventType", "Fatalities", "Injuries") # headings
+Event_Health$Tot_Inj.Fatal <- Event_Health$Injuries + Event_Health$Fatalities #Total 
 
-Event_Health <- Event_Health[Event_Health$Tot_Inj.Fatal >0, ]
-Event_Health <- Event_Health[with(Event_Health, order(-Tot_Inj.Fatal, -Fatalities, -Injuries, EventType )),]
+Event_Health <- Event_Health[Event_Health$Tot_Inj.Fatal >0, ] # Only when the total is greater than 0
+Event_Health <- Event_Health[with(Event_Health, order(-Tot_Inj.Fatal, -Fatalities, -Injuries, EventType )),] #order by the total (descending)
 
 ```
 
+Fortunately accross the USA there are considerably less deaths from storms than injuries.  This can be seen from the table and chart below.
 
-```{r}
+```{r,message=FALSE}
 
 
 EventHlth <- head(Event_Health,15) 
 
+head(format(EventHlth, big.mark = ","),15)
+
+
 ```
 
-
-```{r}
+The same information can be seen the chart below.
+```{r,message=FALSE}
 
 
 EventHlth <- EventHlth[c("EventType", "Fatalities", "Injuries")]
 
 health.long<-melt(EventHlth,id.vars="EventType")
 
+qplot(x = EventType, data = health.long, geom = "bar", weight = value, fill = variable)+ theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) + facet_grid(variable~. , scales = "free")
 
-ggplot(health.long, aes(EventType,value, fill = as.factor(variable) )) + geom_bar(stat = "identity") + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+The table below shows event types sorted by the number of fatalities and the number of injuries
+
+```{r,message=FALSE}
+
+all_tots <- merge(Event_losses, Event_Health, by ="EventType" )
+
+all_tots <- all_tots[with(all_tots, order(-Fatalities, -Injuries,EventType )),]
 
 
+format(all_tots,big.mark = ",")
 ```
 
